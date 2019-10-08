@@ -19,7 +19,7 @@ class RainDropRemoval(object):
 
 
 
-	def generatorAt(self, inputs, attention, reuse=False, scope='g_net'):
+	def generatorSimplified(self, inputs, attention, reuse=False, scope='g_net'):
 		n, h, w, c = inputs.get_shape().as_list()
 
 		with tf.variable_scope(scope, reuse=reuse):
@@ -110,7 +110,7 @@ class RainDropRemoval(object):
 		inputs = tf.placeholder(shape=[self.batch_size, H, W, inp_chns], dtype=tf.float32)
 		edges = tf.placeholder(shape=[self.batch_size, H, W, 8], dtype=tf.float32)
 		# att = conv_torque(edges)
-		outputs = self.generatorAt(inputs,edges, reuse=False)
+		outputs = self.generatorSimplified(inputs,edges, reuse=False)
 		sess = tf.Session(config=tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True)))
 
 		self.saver = tf.train.Saver()
