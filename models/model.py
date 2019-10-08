@@ -98,9 +98,12 @@ class RainDropRemoval(object):
 			print (' [*] Reading checkpoints... ERROR')
 			return False
 
-	def test(self, height, width, input_path, gt_path,att_path, output_path):
+	def test(self, height, width, inputdata_path, output_path):
 		if not os.path.exists(output_path):
 			os.makedirs(output_path)
+		input_path = inputdata_path + '/data'
+		gt_path = inputdata_path + '/gt'
+		att_path = inputdata_path + '/edges'
 		imgsName = sorted(os.listdir(input_path))
 		gtsName  = sorted(os.listdir(gt_path))
 		num  = len(imgsName)

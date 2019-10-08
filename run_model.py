@@ -29,12 +29,8 @@ def parse_args():
 	                        help='height for the tensorflow placeholder')
 	parser.add_argument('--width', type=int, default=720,
 	                        help='width for the tensorflow placeholder,')
-	parser.add_argument('--input_path', type=str, default='./testing_real/data/',
+	parser.add_argument('--inputdata_path', type=str, default='./testing_real/',
 	                        help='input path for testing images')
-	parser.add_argument('--gt_path', type=str, default='./testing_real/gt/',
-	                        help='gtinput path for testing images')
-	parser.add_argument('--att_path', type=str, default='./testing_real/edges/',
-	                        help='att path for testing images')
 	parser.add_argument('--output_path', type=str, default='./testing_result',
 	                        help='output path for testing images')
 	args = parser.parse_args()
@@ -49,6 +45,6 @@ def main(_):
 		os.environ['CUDA_VISIBLE_DEVICES'] = ''
 	if args.phase == 'test':
 		rainDrop = model.RainDropRemoval(args)
-		rainDrop.test(args.height, args.width, args.input_path, args.gt_path,args.att_path, args.output_path)
+		rainDrop.test(args.height, args.width, args.inputdata_path,args.output_path)
 if __name__ == '__main__':
 	tf.app.run()
