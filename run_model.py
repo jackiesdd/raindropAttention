@@ -29,11 +29,11 @@ def parse_args():
 	                        help='height for the tensorflow placeholder')
 	parser.add_argument('--width', type=int, default=720,
 	                        help='width for the tensorflow placeholder,')
-	parser.add_argument('--input_path', type=str, default='../testing_real/data/',
+	parser.add_argument('--input_path', type=str, default='./testing_real/data/',
 	                        help='input path for testing images')
-	parser.add_argument('--gt_path', type=str, default='../testing_real/gt/',
+	parser.add_argument('--gt_path', type=str, default='./testing_real/gt/',
 	                        help='gtinput path for testing images')
-	parser.add_argument('--att_path', type=str, default='../testing_real/edges/',
+	parser.add_argument('--att_path', type=str, default='./testing_real/edges/',
 	                        help='att path for testing images')
 	parser.add_argument('--output_path', type=str, default='./testing_result',
 	                        help='output path for testing images')
