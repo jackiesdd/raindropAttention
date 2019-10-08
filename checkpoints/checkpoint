@@ -1,0 +1,3 @@
+model_checkpoint_path: "rainDrop.model-1000"
+all_model_checkpoint_paths: "rainDrop.model-500"
+all_model_checkpoint_paths: "rainDrop.model-1000"
