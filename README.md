@@ -1,4 +1,4 @@
-# DeepLearningforSeeingThroughWindowWithRaindrops
+# Deep Learning for Seeing Through Window With Raindrops
 by Yuhui Quan, Shijie Deng, Yixin Chen, Hui Ji
 
 ## Environment
