@@ -37,13 +37,9 @@ def conv_torque(input):
     gradientOrix = tf.zeros(inputShape,dtype=tf.float32)
     AllOnes = tf.ones(inputShape,dtype=tf.float32)
     for i in range(input.shape[3]):
-        # print(direc[i][1])
          gradientOriy += AllOnes*input[:,:,:,i] * direc[i][0]
          gradientOrix += AllOnes*input[:,:,:,i] * direc[i][1]
-         # if i == 7:
-         #     return gradientOrix
 
-    # print(gradientOri)
 
     gradientOriy = tf.expand_dims(gradientOriy,axis=3)
 
@@ -52,10 +48,6 @@ def conv_torque(input):
     tfgradientOriy = gradientOriy
     tfgradientOrix = gradientOrix
 
-    # filterx = np.tile(filterx,[1,1,1,10])
-    # xweights_data = np.tile(xweights_data,[1,channeln,1,channeln])
-    # xweights_data = np.reshape(xweights_data,[1, 2, channeln, channeln])
-    # print(np.expand_dims(np.expand_dims(np.tile(np.expand_dims(np.linspace(-9.5, 9.5, 20), axis=1), [1, 20]),axis=2),axis=3))
     tffiltery20 = tf.constant(np.expand_dims(np.expand_dims(np.tile(np.expand_dims(np.linspace(9.5, -9.5, 20), axis=1), [1, 20]),axis=2),axis=3), tf.float32)
     tffilterx20 = tf.constant(np.expand_dims(np.expand_dims(np.tile(np.linspace(9.5, -9.5, 20), [20,1]), axis=2), axis=3), tf.float32)
     xresult20 = tf.nn.conv2d(tfgradientOrix, tffilterx20, strides=[1, 1, 1, 1], padding='SAME')
@@ -87,13 +79,59 @@ def conv_torque(input):
     result40 = (xresult40 + yresult40)/40**2/40**2
 
 
-
-    # print(result41.shape)
     result = tf.concat([result20,result25,result30,result35,result40],axis=3)
     result = tf.maximum(result,0)
     Maxnpresult = tf.reduce_max(result,axis=3,keep_dims=True)
     return Maxnpresult
 
+def amitedgefinder(img,threshold):
+    shift = 2 * [[1,0],[0,-1],[-1,0],[0,1]]#North east south west
+    img = rgb2gray(img)
+    b,h,w = img.shape
+    cross0 = img - myShift(img, shift[0])
+    cross1 = img - myShift(img, shift[1])
+    cross2 = img - myShift(img, shift[2])
+    cross3 = img - myShift(img, shift[3])
+    cross = tf.stack([cross0,cross1,cross2,cross3],axis=3)
+    whichMax = tf.argmax(cross,axis=3)
+    whichMin = tf.argmin(cross,axis=3)
+    edgeMap0 = findGradient(cross,whichMax,whichMin,shift[0],0,threshold)
+    edgeMap2 = findGradient(cross,whichMax,whichMin,shift[1],1,threshold)
+    edgeMap4 = findGradient(cross,whichMax,whichMin,shift[2],2,threshold)
+    edgeMap6 = findGradient(cross,whichMax,whichMin,shift[3],3,threshold)
+
+    dshift = 2* [[1,-1],[-1,-1],[-1,1],[1,1]]#diagnal direction
+    cross4 = img - myShift(img, dshift[0])
+    cross5 = img - myShift(img, dshift[1])
+    cross6 = img - myShift(img, dshift[2])
+    cross7 = img - myShift(img, dshift[3])
+    cross_d = tf.stack([cross4,cross5,cross6,cross7],axis=3)
+    edgeMap1 = findGradient(cross_d,whichMax,whichMin,dshift[0],0,threshold)
+    edgeMap3 = findGradient(cross_d,whichMax,whichMin,dshift[1],1,threshold)
+    edgeMap5 = findGradient(cross_d,whichMax,whichMin,dshift[2],2,threshold)
+    edgeMap7 = findGradient(cross_d,whichMax,whichMin,dshift[3],3,threshold)
+    edgeMap = tf.stack([edgeMap0, edgeMap1, edgeMap2, edgeMap3, edgeMap4, edgeMap5, edgeMap6, edgeMap7], axis=3)
+    return edgeMap
+
+def rgb2gray(rgb):
+    return rgb[...,0]*0.299+rgb[...,1]*0.587+rgb[...,2]*0.114
+
+def findGradient(cross, whichMaxDir, whichMinDir, shiftDir, dirIndex, threshold):
+    oppositeDirIndex = (dirIndex + 1)%4 + 1
+    crossSegment = cross[:,:,:,dirIndex]
+    shiftedWhichMinDir = myShift(whichMinDir, shiftDir)
+    gradient = tf.logical_and(tf.equal(whichMaxDir,dirIndex),  (tf.equal(shiftedWhichMinDir,oppositeDirIndex)))
+    gradient = tf.logical_and(gradient,tf.greater(crossSegment,threshold/255.0))
+    return gradient
+
+def myShift(img,vector):
+    absVector = [abs(vector[0]),abs(vector[1])]
+    padImg = tf.pad(img,[[0,0],[absVector[0],absVector[0]],[absVector[1],absVector[1]]],'CONSTANT')
+    _,padh,padw = padImg.shape
+    shitfImg = tf.manip.roll(padImg, shift=vector, axis=[1, 2])
+
+    shifted = shitfImg[:,absVector[0] :padh - absVector[0], absVector[1] : padw - absVector[1]]
+    return shifted
 
 def ResnetBlock_att(x, dim, ksize, att,scope='rb'):
     with tf.variable_scope(scope):

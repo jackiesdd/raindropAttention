@@ -19,7 +19,7 @@ class RainDropRemoval(object):
 
 
 
-	def generatorSimplified(self, inputs, attention, reuse=False, scope='g_net'):
+	def generatorSimplified(self, inputs, reuse=False, scope='g_net'):
 		n, h, w, c = inputs.get_shape().as_list()
 
 		with tf.variable_scope(scope, reuse=reuse):
@@ -29,10 +29,12 @@ class RainDropRemoval(object):
 				biases_initializer=tf.constant_initializer(0.0)):
 
 				inp_pred = inputs
-
 				inp_rdrop = tf.image.resize_images(inputs, [h, w], method=0)
 				inp_pred  = tf.stop_gradient(tf.image.resize_images(inp_pred, [h, w], method=0))
-				attention = conv_torque(attention)
+
+				edgemap = amitedgefinder(inp_pred,10)
+				edgemap = tf.cast(edgemap,dtype=tf.float32)
+				attention = conv_torque(edgemap)
 				dot_product = inp_rdrop * attention
 				inp_all   = tf.concat([inp_rdrop,dot_product, inp_pred], axis=3, name='inp')
 
@@ -103,7 +105,6 @@ class RainDropRemoval(object):
 			os.makedirs(output_path)
 		input_path = inputdata_path + '/data'
 		gt_path = inputdata_path + '/gt'
-		att_path = inputdata_path + '/edges'
 		imgsName = sorted(os.listdir(input_path))
 		gtsName  = sorted(os.listdir(gt_path))
 		num  = len(imgsName)
@@ -111,9 +112,7 @@ class RainDropRemoval(object):
 		inp_chns = 3
 		self.batch_size = 1
 		inputs = tf.placeholder(shape=[self.batch_size, H, W, inp_chns], dtype=tf.float32)
-		edges = tf.placeholder(shape=[self.batch_size, H, W, 8], dtype=tf.float32)
-		# att = conv_torque(edges)
-		outputs = self.generatorSimplified(inputs,edges, reuse=False)
+		outputs = self.generatorSimplified(inputs, reuse=False)
 		sess = tf.Session(config=tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True)))
 
 		self.saver = tf.train.Saver()
@@ -125,10 +124,7 @@ class RainDropRemoval(object):
 
 		for i in range(num):
 			gt = scipy.misc.imread(os.path.join(gt_path, gtsName[i]))
-			edgesData = np.ones((H,W,8))
 			rDrop = scipy.misc.imread(os.path.join(input_path, imgsName[i]))
-			for j in range(8):
-				edgesData[:,:,j] = scipy.misc.imread(os.path.join(att_path, imgsName[i][:-4] + str(j+1)+imgsName[i][-4:]))
 			h, w, c = rDrop.shape
 			rDrop = rDrop[:,:,0:3]
 			print( rDrop.shape)
@@ -152,15 +148,14 @@ class RainDropRemoval(object):
 			rDropPad = np.expand_dims(rDropPad, 0)
 
 
-			edgesDataPad = np.expand_dims(edgesData, 0)
 			start = time.time()
-			derDrop = sess.run(outputs, feed_dict={inputs: rDropPad / 255.0,  edges: edgesDataPad / 255.0})
+			derDrop = sess.run(outputs, feed_dict={inputs: rDropPad / 255.0})
 			duration = time.time() - start
 
 			print ('Saving results: %s ... %4.3fs' % (os.path.join(output_path, imgsName[i]), duration))
 
 			res = im2uint8(derDrop[0, :, :, :])
-			# crop the image into original sizze
+			# crop the image into original size
 			if resize:
 				res = res[:new_h, :new_w]
 				res = scipy.misc.imresize(res, [h, w], 'bicubic')
