@@ -1,6 +1,8 @@
 # Deep Learning for Seeing Through Window With Raindrops
 by Yuhui Quan, Shijie Deng, Yixin Chen, Hui Ji
 
+Shijie Deng is in charge of this code repo. If you have any questions, please contact shijie.deng.cs@foxmail.com
+
 ## Environment
 - Python3.5
 - Tensorflow 1.9 with NVIDIA GPU
