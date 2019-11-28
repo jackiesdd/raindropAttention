@@ -85,6 +85,7 @@ def conv_torque(input):
     return Maxnpresult
 
 def amitedgefinder(img,threshold):
+    # if a is the minimum of b's neighbors and b is the maximum of a's neighbors an edge is found.
     shift = 2 * [[1,0],[0,-1],[-1,0],[0,1]]#North east south west
     img = rgb2gray(img)
     b,h,w = img.shape
@@ -106,6 +107,8 @@ def amitedgefinder(img,threshold):
     cross6 = img - myShift(img, dshift[2])
     cross7 = img - myShift(img, dshift[3])
     cross_d = tf.stack([cross4,cross5,cross6,cross7],axis=3)
+    whichMax = tf.argmax(cross_d,axis=3)
+    whichMin = tf.argmin(cross_d,axis=3)
     edgeMap1 = findGradient(cross_d,whichMax,whichMin,dshift[0],0,threshold)
     edgeMap3 = findGradient(cross_d,whichMax,whichMin,dshift[1],1,threshold)
     edgeMap5 = findGradient(cross_d,whichMax,whichMin,dshift[2],2,threshold)
@@ -137,11 +140,11 @@ def ResnetBlock_att(x, dim, ksize, att,scope='rb'):
     with tf.variable_scope(scope):
         net1= slim.conv2d(x, dim, [ksize, ksize], scope='conv1_1')
         net1 = slim.conv2d(net1, dim, [ksize, ksize], activation_fn=None, scope='conv1_2')
-        net1, feature, scale = channel_attention(net1, 'ch_at', 2.0)
-        att = tf.reduce_mean(att,axis=3 ,keep_dims=True)
-        att = tf.tile(att,[1,1,1,dim])
-        net2 = att * net1
-        return tf.nn.relu( net1 + net2 + x ), feature, scale
+        netc, feature, c_scale = channel_attention(net1, 'ch_at', 2.0)
+        s_scale = tf.reduce_mean(att,axis=3 ,keep_dims=True)
+        s_scale = tf.tile(s_scale,[1,1,1,dim])
+        netresult = ((1+c_scale)*(1+s_scale)-1)*net1 # CA * PA * feature map
+        return tf.nn.relu( netresult + x ), feature, c_scale
 
 def channel_attention(input_feature, name, ratio=8):
     kernel_initializer = tf.contrib.layers.variance_scaling_initializer()
