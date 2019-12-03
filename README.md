@@ -7,7 +7,6 @@ Shijie Deng is in charge of this code repo. If you have any questions, please co
 - Python3.5
 - Tensorflow 1.9 with NVIDIA GPU
 
-< img src='testing_real/data/0_rain.png'>
 
 ## Testing
 We use the dataset with rainy and clean images created by https://github.com/rui1996/DeRaindrop.  Edges maps are added for attention, all pictures are under the directory /testing_real/ and the outputs are under /testing_result/.
