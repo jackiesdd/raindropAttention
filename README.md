@@ -2,6 +2,7 @@
 by Yuhui Quan, Shijie Deng, Yixin Chen, Hui Ji
 
 Shijie Deng is in charge of this code repo. If you have any questions, please contact shijie.deng.cs@foxmail.com
+
 See more details on http://csyhquan.github.io/
 
 ## Environment
