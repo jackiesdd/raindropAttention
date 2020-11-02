@@ -7,7 +7,7 @@ from models import model
 def parse_args():
 	parser = argparse.ArgumentParser(description='rainDrop arguments')
 	# train params
-	parser.add_argument('--phase', type=str, default='test', help='determine whether "train" or "test" ')
+	parser.add_argument('--phase', type=str, default='train', help='determine whether "train" or "test" ')
 	parser.add_argument('--datalist', type=str, default='./raindrop.txt', help='training datalist')
 	parser.add_argument('--tfrecord_dir', type=str, default='./tf/train2.tfrecords', help='the location of tfrecord')
 	parser.add_argument('--batch_size', type=int, default=10, help='training batch size')
@@ -17,7 +17,7 @@ def parse_args():
 	parser.add_argument('--modelname', type=str, default='rainDrop', help='model type')
 
 	# test params
-	parser.add_argument('--restore_step', type=int, default='258000', help='restore from ckpt point')
+	parser.add_argument('--restore_step', type=int, default='0', help='restore from ckpt point')
 
 	parser.add_argument('--inputdata_path', type=str, default='./testing_real/',
 	                        help='input path for testing images')
