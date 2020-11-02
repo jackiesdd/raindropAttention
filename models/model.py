@@ -30,7 +30,7 @@ class RainDropRemoval(object):
 		self.iscale = 0
 		self.mode = 0
 		self.model_name = 'rainDrop.model'
-		self.train_dir = os.path.join('./checkpoints', args.model)
+		self.train_dir = './checkpoints/'
 		self.restore_step = args.restore_step
 		if not os.path.exists(self.train_dir):
 			os.makedirs(self.train_dir)
@@ -39,9 +39,9 @@ class RainDropRemoval(object):
 			self.train_dir, self.tfrecord_dir)
 	def input_producer(self, batch_size=10):
 		def read_data():
-			img_a = tf.image.decode_image(tf.read_file(tf.string_join(['../trainingset/', self.data_queue[0]])),
+			img_a = tf.image.decode_image(tf.read_file(tf.string_join(['./', self.data_queue[0]])),
 										channels=3)
-			img_b = tf.image.decode_image(tf.read_file(tf.string_join(['../trainingset/', self.data_queue[1]])),
+			img_b = tf.image.decode_image(tf.read_file(tf.string_join(['./', self.data_queue[1]])),
 										channels=3)
 			img_a = tf.cast(img_a, tf.float32) / 255.0
 			img_b = tf.cast(img_b, tf.float32) / 255.0
@@ -124,8 +124,7 @@ class RainDropRemoval(object):
 
 	def build_model(self):
 		img_in, img_gt= self.input_producer(self.batch_size)
-		self.sin = img_in
-		self.sgt = img_gt
+
 		tf.summary.image('img_in', im2uint8(img_in))
 		tf.summary.image('img_gt', im2uint8(img_gt))
 		print ('img_in, img_gt' , img_in.get_shape(), img_gt.get_shape())
@@ -188,15 +187,10 @@ class RainDropRemoval(object):
 
 		for step in range(sess.run(global_step), self.max_steps + 1):
 			start_time = time.time()
-
-			self.mode = random.randint(0,3)
-			self.iscale = random.randint(0,2)
-
 			_, loss_total_val = sess.run([train_gnet, self.loss_total])
 			duration = time.time() - start_time
 			# print loss value
 			assert not np.isnan(loss_total_val), 'Model diverged with loss = NaN'
-
 
 			self.current_epoch = step / self.data_size
 			if step % 10 == 0:
@@ -206,7 +200,6 @@ class RainDropRemoval(object):
 				format_str = ('%s: step %d, final_step %d, epoch %d, lr %.5f, loss = (%.5f; %.5f, %.5f)(%.1f data/s; %.3f s/bch)')
 				print(format_str % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), step, self.max_steps,
 				 					self.current_epoch, sess.run(self.lr), loss_total_val, 0.0, 0.0, examples_per_sec, sec_per_batch))
-
 
 
 			if step>self.restore_step and step % 5000 == 0 and step > 10000 or step == self.max_steps:
