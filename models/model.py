@@ -14,10 +14,51 @@ class RainDropRemoval(object):
 	def __init__(self, args):
 		self.args = args
 		self.chns = 3
+		self.scale = 0.5
+		self.crop_size = 256
+		self.n_levels = 1
+
+		self.data_list = open(args.datalist, 'rt').read().splitlines()
+		self.data_list = list(map(lambda x: x.split(' '), self.data_list))
+		print(self.data_list)
+		self.batch_size = args.batch_size
+		self.learning_rate = args.learning_rate
+		self.data_size = (len(self.data_list)) // self.batch_size
+		self.epoch = args.epoch
+		self.max_steps = int(self.epoch * self.data_size)
+		self.current_epoch = 0
+		self.iscale = 0
+		self.mode = 0
 		self.model_name = 'rainDrop.model'
+		self.train_dir = os.path.join('./checkpoints', args.model)
 		self.restore_step = args.restore_step
+		if not os.path.exists(self.train_dir):
+			os.makedirs(self.train_dir)
+		self.tfrecord_dir = args.tfrecord_dir
+		print (self.batch_size, self.learning_rate, self.data_size, self.epoch, self.max_steps,
+			self.train_dir, self.tfrecord_dir)
+	def input_producer(self, batch_size=10):
+		def read_data():
+			img_a = tf.image.decode_image(tf.read_file(tf.string_join(['../trainingset/', self.data_queue[0]])),
+										channels=3)
+			img_b = tf.image.decode_image(tf.read_file(tf.string_join(['../trainingset/', self.data_queue[1]])),
+										channels=3)
+			img_a = tf.cast(img_a, tf.float32) / 255.0
+			img_b = tf.cast(img_b, tf.float32) / 255.0
+			img_a, img_b = tf.unstack(tf.random_crop(tf.stack([img_a,img_b], axis=0), [2, self.crop_size, self.crop_size, self.chns]),
+							axis=0)
+			
+			return img_a, img_b
+		with tf.variable_scope('input'):
+			List_all = tf.convert_to_tensor(self.data_list, dtype=tf.string)
+			gt_list = List_all[:, 0]
+			in_list = List_all[:, 1]
 
-
+			self.data_queue = tf.train.slice_input_producer([in_list, gt_list], capacity=20)
+			print("joint path")
+			image_in, image_gt= read_data()
+			batch_in, batch_gt= tf.train.batch([ image_in, image_gt], batch_size=batch_size, num_threads=1, capacity=20)
+		return batch_in, batch_gt
 
 	def generatorSimplified(self, inputs, reuse=False, scope='g_net'):
 		n, h, w, c = inputs.get_shape().as_list()
@@ -81,6 +122,100 @@ class RainDropRemoval(object):
 			return inp_pred
 
 
+	def build_model(self):
+		img_in, img_gt= self.input_producer(self.batch_size)
+		self.sin = img_in
+		self.sgt = img_gt
+		tf.summary.image('img_in', im2uint8(img_in))
+		tf.summary.image('img_gt', im2uint8(img_gt))
+		print ('img_in, img_gt' , img_in.get_shape(), img_gt.get_shape())
+
+		x_unwarp = self.generatorSimplified(img_in, reuse=False)
+
+
+		self.loss_total = 0
+
+		_, hi, wi, _ = x_unwarp.get_shape().as_list()
+		gt_i = tf.image.resize_images(img_gt, [hi, wi], method=0)
+
+		loss = tf.reduce_mean(tf.abs(gt_i - x_unwarp))
+		self.loss_total += loss
+
+		all_vars = tf.trainable_variables()
+		self.all_vars = all_vars
+		self.g_var    = [var for var in all_vars if 'g_net' in var.name]
+		for var in all_vars:
+			print (var.name)
+
+
+
+	def train(self):
+		def get_optimizer(loss, global_step=None, var_list=None, is_gradient_clip=False):
+			train_op = tf.train.AdamOptimizer(self.lr)
+			if is_gradient_clip:
+				pass
+			else:
+				train_op = train_op.minimize(loss, global_step, var_list)
+			return train_op
+
+		global_step = tf.Variable(initial_value=self.restore_step, dtype=tf.int32, trainable=False)
+		self.global_step = global_step
+
+		# build model
+
+		self.build_model()
+		self.lr = tf.train.polynomial_decay(self.learning_rate, global_step, self.max_steps,
+			end_learning_rate=0.0, power=0.3)
+		tf.summary.scalar('learning_rate', self.lr)
+
+		train_gnet = get_optimizer(self.loss_total, global_step, self.g_var)
+
+		# session and thread
+		gpu_options = tf.GPUOptions(allow_growth=True)
+		sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+		self.sess = sess
+		self.saver = tf.train.Saver(max_to_keep=100, keep_checkpoint_every_n_hours=1)
+
+		dir =  './checkpoints/'
+		sess.run(tf.global_variables_initializer())
+
+		if self.restore_step!=0:
+			self.load(sess, dir, step=self.restore_step)
+
+		coord = tf.train.Coordinator()
+		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+
+
+		for step in range(sess.run(global_step), self.max_steps + 1):
+			start_time = time.time()
+
+			self.mode = random.randint(0,3)
+			self.iscale = random.randint(0,2)
+
+			_, loss_total_val = sess.run([train_gnet, self.loss_total])
+			duration = time.time() - start_time
+			# print loss value
+			assert not np.isnan(loss_total_val), 'Model diverged with loss = NaN'
+
+
+			self.current_epoch = step / self.data_size
+			if step % 10 == 0:
+				num_examples_per_step = self.batch_size
+				examples_per_sec = num_examples_per_step / duration
+				sec_per_batch = float(duration)
+				format_str = ('%s: step %d, final_step %d, epoch %d, lr %.5f, loss = (%.5f; %.5f, %.5f)(%.1f data/s; %.3f s/bch)')
+				print(format_str % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), step, self.max_steps,
+				 					self.current_epoch, sess.run(self.lr), loss_total_val, 0.0, 0.0, examples_per_sec, sec_per_batch))
+
+
+
+			if step>self.restore_step and step % 5000 == 0 and step > 10000 or step == self.max_steps:
+				checkpoint_path = os.path.join(self.train_dir, 'checkpoints')
+				self.save(sess, checkpoint_path, step)
+	def save(self, sess, checkpoint_dir, step):
+		if not os.path.exists(checkpoint_dir):
+			os.makedirs(checkpoint_dir)
+		self.saver.save(sess, os.path.join(checkpoint_dir, self.model_name), global_step=step)
 	def load(self, sess, checkpoint_dir, step=None):
 		print (' [*] Reading checkpoints...')
 		ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
