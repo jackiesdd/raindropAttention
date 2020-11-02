@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Oct 13 20:25:47 2018
-@author: tyty
-@e-mail: bravotty@protonmail.com
-"""
-
 import os
 import argparse
 import tensorflow as tf
