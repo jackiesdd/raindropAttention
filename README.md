@@ -11,6 +11,9 @@ See more details on http://csyhquan.github.io/
 
 
 ## Testing
+The testing checkpoints can be downloaded at ：https://pan.baidu.com/s/1Ocp-xM83s2Irts1ssd5UVQ 
+access code：y70s 
+
 We use the dataset with rainy and clean images created by https://github.com/rui1996/DeRaindrop.  Edges maps are added for attention, all pictures are under the directory /testing_real/ and the outputs are under /testing_result/.
 Run the code below to get the result of our model.
 ```bash
