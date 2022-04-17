@@ -17,7 +17,7 @@ def parse_args():
 	parser.add_argument('--modelname', type=str, default='rainDrop', help='model type')
 
 	# test params
-	parser.add_argument('--restore_step', type=int, default='0', help='restore from ckpt point')
+	parser.add_argument('--restore_step', type=int, default='258000', help='restore from ckpt point')
 
 	parser.add_argument('--inputdata_path', type=str, default='./testing_real/',
 	                        help='input path for testing images')
