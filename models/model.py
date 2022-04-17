@@ -20,7 +20,7 @@ class RainDropRemoval(object):
 
 		self.data_list = open(args.datalist, 'rt').read().splitlines()
 		self.data_list = list(map(lambda x: x.split(' '), self.data_list))
-		print(self.data_list)
+		#print(self.data_list)
 		self.batch_size = args.batch_size
 		self.learning_rate = args.learning_rate
 		self.data_size = (len(self.data_list)) // self.batch_size
