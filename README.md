@@ -20,3 +20,5 @@ Run the code below to get the result of our model.
 python run_model.py --inputdata_path ./testing_real/ --output_path ./testing_result --phase test
 ```
 Quantitative results of PSNR and SSIM will be printed, you can check /testing_result/ for a qualitative evaluation.
+
+## Datalist prepare
