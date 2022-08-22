@@ -17,7 +17,7 @@ access code：y70s
 We use the dataset with rainy and clean images created by https://github.com/rui1996/DeRaindrop.  Edges maps are added for attention, all pictures are under the directory /testing_real/ and the outputs are under /testing_result/.
 Run the code below to get the result of our model.
 ```bash
-python run_model.py --inputdata_path ./testing_real/ --output_path ./testing_result --phase test
+python run_model.py --inputdata_path ./testing_real/ --output_path ./testing_result --phase test --restore_step 258000
 ```
 Quantitative results of PSNR and SSIM will be printed, you can check /testing_result/ for a qualitative evaluation.
 
@@ -25,4 +25,15 @@ Quantitative results of PSNR and SSIM will be printed, you can check /testing_re
 
 Put your training rainy images at "train_img/data/" and corresponding gt clean images at "train_img/gt/"(images should be *.jpg or *.png format).
 
-Then run the train_list.sh to generate datalist to train.
+Then run the train_list.sh to generate datalist raindrop.txt to train.
+
+raindrop.txt should be like this, one gt image path with one rainy image path after it :
+```bash
+train_img/gt/0_clean.png train_img/rain/0_rain.png
+```
+
+Run the code below to train the model.
+
+```bash
+python run_model.py  --phase train --restore_step 0
+```
