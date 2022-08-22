@@ -21,4 +21,8 @@ python run_model.py --inputdata_path ./testing_real/ --output_path ./testing_res
 ```
 Quantitative results of PSNR and SSIM will be printed, you can check /testing_result/ for a qualitative evaluation.
 
-## Datalist prepare
+## Training
+
+Put your training rainy images at "train_img/data/" and corresponding gt clean images at "train_img/gt/"(images should be *.jpg or *.png format).
+
+Then run the train_list.sh to generate datalist to train.
